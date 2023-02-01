@@ -1,0 +1,55 @@
+plugins {
+    id('java')
+    id('application')
+    id('maven-publish')
+    id('com.github.johnrengelman.shadow') version('7.1.2')
+}
+
+group 'eu.koboo'
+version "$reposiliteVersion"
+
+application {
+    mainClass.set("eu.koboo.reposilite.discord.webhook.DiscordWebhookPlugin")
+}
+
+repositories {
+    mavenCentral()
+    maven {
+        name 'reposilite-repo'
+        url 'https://maven.reposilite.com/releases/'
+    }
+    maven {
+        name 'reposilite-snapshots'
+        url 'https://maven.reposilite.com/snapshots/'
+    }
+    maven {
+        name 'koboo-repo'
+        url 'https://reposilite.koboo.eu/releases'
+    }
+}
+
+dependencies {
+    implementation("club.minnced:discord-webhooks:0.8.2")
+    compileOnly("com.reposilite:reposilite:$reposiliteVersion")
+}
+
+shadowJar {
+    archiveBaseName.set("discord-webhook-plugin")
+}
+
+publishing {
+    repositories {
+        maven {
+            url('https://reposilite.koboo.eu/binflux')
+            credentials {
+                username(System.getenv('REPO_USER'))
+                password(System.getenv('REPO_TOKEN'))
+            }
+        }
+    }
+    publications {
+        maven(MavenPublication) {
+            from components.java
+        }
+    }
+}
