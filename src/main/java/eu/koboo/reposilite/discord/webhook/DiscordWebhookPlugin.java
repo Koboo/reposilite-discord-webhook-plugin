@@ -4,6 +4,7 @@ import club.minnced.discord.webhook.WebhookClient;
 import club.minnced.discord.webhook.WebhookClientBuilder;
 import club.minnced.discord.webhook.send.WebhookEmbed;
 import club.minnced.discord.webhook.send.WebhookEmbedBuilder;
+import com.reposilite.configuration.shared.SharedConfigurationFacade;
 import com.reposilite.maven.api.DeployEvent;
 import com.reposilite.plugin.api.Facade;
 import com.reposilite.plugin.api.Plugin;
@@ -36,6 +37,8 @@ public class DiscordWebhookPlugin extends ReposilitePlugin {
 
     @Override
     public @Nullable Facade initialize() {
+        SharedConfigurationFacade sharedConfigurationFacade = extensions().facade(SharedConfigurationFacade.class);
+
         extensions().registerEvent(ReposiliteInitializeEvent.class, event -> {
             getLogger().info("");
             getLogger().info(DiscordWebhookPlugin.class + " was successful loaded!");
