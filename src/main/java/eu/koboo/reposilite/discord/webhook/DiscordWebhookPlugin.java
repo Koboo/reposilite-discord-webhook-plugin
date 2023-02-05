@@ -2,109 +2,122 @@ package eu.koboo.reposilite.discord.webhook;
 
 import club.minnced.discord.webhook.WebhookClient;
 import club.minnced.discord.webhook.WebhookClientBuilder;
-import club.minnced.discord.webhook.send.WebhookEmbed;
-import club.minnced.discord.webhook.send.WebhookEmbedBuilder;
 import com.reposilite.configuration.shared.SharedConfigurationFacade;
 import com.reposilite.maven.api.DeployEvent;
 import com.reposilite.plugin.api.Facade;
 import com.reposilite.plugin.api.Plugin;
-import com.reposilite.plugin.api.ReposiliteInitializeEvent;
+import com.reposilite.plugin.api.ReposiliteDisposeEvent;
 import com.reposilite.plugin.api.ReposilitePlugin;
-import com.reposilite.storage.api.Location;
+import eu.koboo.reposilite.discord.webhook.listener.DeployEventListener;
+import eu.koboo.reposilite.discord.webhook.listener.DisposeEventListener;
+import eu.koboo.reposilite.discord.webhook.settings.DiscordWebhookSettings;
+import eu.koboo.reposilite.discord.webhook.settings.RepositoryWebHookSettings;
+import kotlin.jvm.JvmClassMappingKt;
+import kotlin.reflect.KClass;
 import org.jetbrains.annotations.Nullable;
+import panda.std.reactive.MutableReference;
 
-@Plugin(name = "discord-webhook-plugin")
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+@Plugin(name = "discord-webhook-plugin", dependencies = {"configuration", "local-configuration", "shared-configuration"}, settings = DiscordWebhookSettings.class)
 public class DiscordWebhookPlugin extends ReposilitePlugin {
 
     private static final String WEBHOOK = "https://discord.com/api/webhooks/1070301314963230730/wWeNkBNc-0Jv9QfbMkUZzPJPN7dwbueY8da5iO50oPbH_hXmDL-F57rPEkwAZBm7Nnjk";
     private static final String REPOSILITE_ICON = "https://reposilite.com/images/favicon.png";
     private static final String REPOSITORY_URL = "https://reposilite.koboo.eu";
 
-    WebhookClient webhookClient;
+    MutableReference<DiscordWebhookSettings> settingsRef;
 
-    public DiscordWebhookPlugin() {
-        WebhookClientBuilder webhookClientBuilder = new WebhookClientBuilder(WEBHOOK);
+    WebhookClient rootWebHookClient;
+    Map<String, WebhookClient> webhookClientMap;
+
+    @Override
+    public @Nullable Facade initialize() {
+        webhookClientMap = new HashMap<>();
+
+        SharedConfigurationFacade sharedConfigurationFacade = extensions().facade(SharedConfigurationFacade.class);
+        sharedConfigurationFacade.updateSharedSettings("discord-webhook", new DiscordWebhookSettings());
+
+        KClass<DiscordWebhookSettings> kotlinClass = JvmClassMappingKt.getKotlinClass(DiscordWebhookSettings.class);
+        settingsRef = sharedConfigurationFacade.getDomainSettings(kotlinClass);
+        settingsRef.subscribe(settings -> handleConfigurationUpdate());
+
+        extensions().registerEvent(DeployEvent.class, new DeployEventListener(this));
+        extensions().registerEvent(ReposiliteDisposeEvent.class, new DisposeEventListener(this));
+        return null;
+    }
+
+    private void handleConfigurationUpdate() {
+        closePreviousWebHooksClients();
+
+        if (settingsRef.get().getRootWebHookUrl().equalsIgnoreCase(DiscordWebhookSettings.DEFAULT_WEBHOOK)) {
+            getLogger().info("You need to configure the settings discord-webhook-plugin in the frontend!");
+            return;
+        }
+
+        try {
+            rootWebHookClient = createWebhookClient("Root", settingsRef.get().getRootWebHookUrl());
+            List<RepositoryWebHookSettings> repositoriesList = settingsRef.get().getAnnouncedRepositoriesList();
+            if(repositoriesList != null && !repositoriesList.isEmpty()) {
+                for (RepositoryWebHookSettings settings : repositoriesList) {
+                    if(settings.getReference() == null || settings.getReference().trim().equalsIgnoreCase("")) {
+                        getLogger().info("Couldn't create a new WebHookClient for a repository, because the repository-name was empty. Please check the configuration of the Discord WebHook.");
+                        continue;
+                    }
+                    if(settings.getWebHookUrl() == null) {
+                        continue;
+                    }
+                    WebhookClient repoWebHookClient = createWebhookClient(settings.getReference(), settings.getWebHookUrl());
+                    webhookClientMap.put(settings.getReference(), repoWebHookClient);
+                }
+            }
+        } catch (Exception e) {
+            getLogger().info("Couldn't create WebHookClients. Please check the configuration of the Discord WebHook.");
+            getLogger().exception(e);
+        }
+    }
+
+    private WebhookClient createWebhookClient(String prefix, String webHookUrl) {
+        WebhookClientBuilder webhookClientBuilder = new WebhookClientBuilder(webHookUrl);
         webhookClientBuilder.setThreadFactory((job) -> {
             Thread thread = new Thread(job);
-            thread.setName("WebHook-Thread-DiscordWebhookPlugin");
+            thread.setName("DiscordWebHook-Thread-" + prefix);
             thread.setDaemon(true);
             return thread;
         });
         webhookClientBuilder.setWait(true);
-
-        this.webhookClient = webhookClientBuilder.build();
+        return webhookClientBuilder.build();
     }
 
-    @Override
-    public @Nullable Facade initialize() {
-        SharedConfigurationFacade sharedConfigurationFacade = extensions().facade(SharedConfigurationFacade.class);
-
-        extensions().registerEvent(ReposiliteInitializeEvent.class, event -> {
-            getLogger().info("");
-            getLogger().info(DiscordWebhookPlugin.class + " was successful loaded!");
-        });
-        extensions().registerEvent(DeployEvent.class, deployEvent -> {
-            if (!deployEvent.getGav().getExtension().endsWith("jar")) {
-                return;
+    public void closePreviousWebHooksClients() {
+        for (WebhookClient webhookClient : webhookClientMap.values()) {
+            if(webhookClient.isShutdown()) {
+                continue;
             }
-            // Removing user ip address
-            String username = deployEvent.getBy().split("@")[0];
-            String repositoryName = deployEvent.getRepository().getName();
-
-            Location parentGov = deployEvent.getGav().getParent();
-            String parentString = parentGov.toString();
-
-            // Building the full url to redirect to the repository
-            String artifactUrl = REPOSITORY_URL + "/#/" + repositoryName + "/" + parentString;
-
-            String[] split = parentString.split("\\/");
-            String version = split[split.length - 1];
-            String artifactId = split[split.length - 2];
-            String replacedParent = parentString
-                    .replaceAll(version, "")
-                    .replaceAll(artifactId, "");
-            String groupId = replacedParent
-                    .substring(0, replacedParent.length() - 2)
-                    .replace("/", ".");
-
-            WebhookEmbedBuilder embedBuilder = new WebhookEmbedBuilder();
-            embedBuilder.setAuthor(new WebhookEmbed.EmbedAuthor(username, REPOSILITE_ICON, artifactUrl));
-            embedBuilder.setTitle(new WebhookEmbed.EmbedTitle("[" + deployEvent.getGav().getSimpleName() + "] new deployment", artifactUrl));
-            embedBuilder.setDescription("A new artifact was deployed!");
-
-            embedBuilder.addField(new WebhookEmbed.EmbedField(
-                    true,
-                    "**Gradle (Groovy)**",
-                    replace("""
-                            ```groovy
-                            implementation "$groupId:$artifactId:$version"
-                            ```
-                            """, groupId, artifactId, version)
-            ));
-            embedBuilder.addField(new WebhookEmbed.EmbedField(
-                    false,
-                    "**Maven**",
-                    replace("""
-                            ```xml
-                            <dependency>
-                              <groupId>$groupId</groupId>
-                              <artifactId>$artifactId</artifactId>
-                              <version>$version</version>
-                            </dependency>```
-                            """, groupId, artifactId, version)
-            ));
-            embedBuilder.setColor(0x49BE25);
-            webhookClient.send(embedBuilder.build())
-                    .thenAccept(readonlyMessage -> {
-                        getLogger().info("WEBHOOK | Send deploy message of artifacts " + deployEvent.getGav() + " to discord-server!");
-                    });
-        });
-        return null;
+            webhookClient.close();
+        }
+        webhookClientMap.clear();
+        if(rootWebHookClient != null) {
+            rootWebHookClient.close();
+            rootWebHookClient = null;
+        }
     }
 
-    private String replace(String text, String groupId, String artifactId, String version) {
-        return text.replace("$groupId", groupId)
-                .replace("$artifactId", artifactId)
-                .replace("$version", version);
+    public WebhookClient getWebHookClient(String repositoryName) {
+        WebhookClient retClient = webhookClientMap.get(repositoryName);
+        if(retClient == null) {
+            retClient = rootWebHookClient;
+        }
+        return retClient;
+    }
+
+    public WebhookClient getRootWebHookClient() {
+        return rootWebHookClient;
+    }
+
+    public DiscordWebhookSettings getSettings() {
+        return settingsRef.get();
     }
 }
