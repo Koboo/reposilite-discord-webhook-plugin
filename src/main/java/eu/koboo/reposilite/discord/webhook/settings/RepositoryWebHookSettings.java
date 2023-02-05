@@ -10,7 +10,7 @@ public class RepositoryWebHookSettings {
     private String reference = "";
 
     private String webHookUrl = null;
-    private String botIconUrl = "https://reposilite.com/images/favicon.png";
+    private String botIconUrl = null;
     private boolean enablePosting = false;
     private boolean enableJavaDocs = false;
     private boolean enableSources = false;
