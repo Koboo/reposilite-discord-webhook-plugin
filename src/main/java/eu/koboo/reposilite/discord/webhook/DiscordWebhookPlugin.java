@@ -38,24 +38,25 @@ public class DiscordWebhookPlugin extends ReposilitePlugin {
 
         KClass<DiscordWebhookSettings> kotlinClass = JvmClassMappingKt.getKotlinClass(DiscordWebhookSettings.class);
         settingsRef = sharedConfigurationFacade.getDomainSettings(kotlinClass);
-        settingsRef.subscribe(settings -> handleConfigurationUpdate());
+        settingsRef.subscribe(this::handleConfigurationUpdate);
+        handleConfigurationUpdate(settingsRef.get());
 
         extensions().registerEvent(DeployEvent.class, new DeployEventListener(this));
         extensions().registerEvent(ReposiliteDisposeEvent.class, new DisposeEventListener(this));
         return null;
     }
 
-    private void handleConfigurationUpdate() {
+    private void handleConfigurationUpdate(DiscordWebhookSettings rootSettings) {
         closePreviousWebHooksClients();
 
-        if (settingsRef.get().getRootWebHookUrl().equalsIgnoreCase(DiscordWebhookSettings.DEFAULT_WEBHOOK)) {
+        if (rootSettings.getRootWebHookUrl().equalsIgnoreCase(DiscordWebhookSettings.DEFAULT_WEBHOOK)) {
             getLogger().info("You need to configure the settings discord-webhook-plugin in the frontend!");
             return;
         }
 
         try {
-            rootWebHookClient = createWebhookClient("Root", settingsRef.get().getRootWebHookUrl());
-            List<RepositoryWebHookSettings> repositoriesList = settingsRef.get().getAnnouncedRepositoriesList();
+            rootWebHookClient = createWebhookClient("Root", rootSettings.getRootWebHookUrl());
+            List<RepositoryWebHookSettings> repositoriesList = rootSettings.getAnnouncedRepositoriesList();
             if(repositoriesList != null && !repositoriesList.isEmpty()) {
                 for (RepositoryWebHookSettings settings : repositoriesList) {
                     if(settings.getReference() == null || settings.getReference().trim().equalsIgnoreCase("")) {
@@ -88,11 +89,11 @@ public class DiscordWebhookPlugin extends ReposilitePlugin {
     }
 
     public void closePreviousWebHooksClients() {
-        for (WebhookClient webhookClient : webhookClientMap.values()) {
-            if(webhookClient.isShutdown()) {
-                continue;
+        for (String repositoryName : webhookClientMap.keySet()) {
+            WebhookClient webhookClient = webhookClientMap.remove(repositoryName);
+            if(webhookClient != null) {
+                webhookClient.close();
             }
-            webhookClient.close();
         }
         webhookClientMap.clear();
         if(rootWebHookClient != null) {

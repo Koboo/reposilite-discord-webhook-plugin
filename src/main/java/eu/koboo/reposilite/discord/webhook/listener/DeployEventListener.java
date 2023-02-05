@@ -10,6 +10,8 @@ import eu.koboo.reposilite.discord.webhook.DiscordWebhookPlugin;
 import eu.koboo.reposilite.discord.webhook.settings.RepositoryWebHookSettings;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.regex.Pattern;
+
 public class DeployEventListener implements EventListener<DeployEvent> {
 
     private final DiscordWebhookPlugin plugin;
@@ -20,19 +22,9 @@ public class DeployEventListener implements EventListener<DeployEvent> {
 
     @Override
     public void onCall(@NotNull DeployEvent deployEvent) {
-        if (!deployEvent.getGav().getExtension().endsWith("jar")) {
-            return;
-        }
-
         // Removing user ip address
         String username = deployEvent.getBy().split("@")[0];
         String repositoryName = deployEvent.getRepository().getName();
-
-        WebhookClient webhookClient = plugin.getWebHookClient(repositoryName);
-        if(webhookClient == null || webhookClient.isShutdown()) {
-            plugin.getLogger().info("Couldn't find WebHookClient for repository " + repositoryName + "!");
-            return;
-        }
 
         RepositoryWebHookSettings settings = plugin.getSettings().getRepository(repositoryName);
         if(settings == null) {
@@ -40,7 +32,21 @@ public class DeployEventListener implements EventListener<DeployEvent> {
             return;
         }
 
-        System.out.println(deployEvent.getGav().getSimpleName());
+        WebhookClient webhookClient = plugin.getWebHookClient(repositoryName);
+        if(webhookClient == null || webhookClient.isShutdown()) {
+            plugin.getLogger().info("Couldn't find WebHookClient for repository " + repositoryName + "!");
+            return;
+        }
+
+
+        String artifactFilterRegex = settings.getArtifactFilter();
+        String simpleName = deployEvent.getGav().getSimpleName();
+        if(artifactFilterRegex != null) {
+            if(!simpleName.matches(artifactFilterRegex)) {
+                plugin.getLogger().info("Regex isn't matching to artifact " + simpleName + "!");
+                return;
+            }
+        }
 
         Location parentGov = deployEvent.getGav().getParent();
         String parentString = parentGov.toString();
@@ -60,7 +66,7 @@ public class DeployEventListener implements EventListener<DeployEvent> {
 
         WebhookEmbedBuilder embedBuilder = new WebhookEmbedBuilder();
         embedBuilder.setAuthor(new WebhookEmbed.EmbedAuthor(username, plugin.getSettings().getRootBotIconUrl(), artifactUrl));
-        embedBuilder.setTitle(new WebhookEmbed.EmbedTitle("[" + deployEvent.getGav().getSimpleName() + "] new deployment", artifactUrl));
+        embedBuilder.setTitle(new WebhookEmbed.EmbedTitle("[" + simpleName + "] new deployment", artifactUrl));
         embedBuilder.setDescription("A new artifact was deployed!");
 
         embedBuilder.addField(new WebhookEmbed.EmbedField(

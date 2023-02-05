@@ -12,8 +12,7 @@ public class RepositoryWebHookSettings {
     private String webHookUrl = null;
     private String botIconUrl = null;
     private boolean enablePosting = false;
-    private boolean enableJavaDocs = false;
-    private boolean enableSources = false;
+    private String artifactFilter = null;
 
     @Doc(title = "Repository",
             description = "This is the name of the repository, which should be announced.")
@@ -41,15 +40,12 @@ public class RepositoryWebHookSettings {
         return enablePosting;
     }
 
-    @Doc(title = "Post javadocs deployment",
-            description = "If checked, the deployment of javadocs artifacts is posted.\n")
-    public boolean isEnableJavaDocs() {
-        return enableJavaDocs;
-    }
-
-    @Doc(title = "Post sources deployment",
-            description = "If checked, the deployment of source artifacts is posted.\n")
-    public boolean isEnableSources() {
-        return enableSources;
+    @Doc(title = "Artifact Filter (RegEx)",
+            description = "Insert a regex filter to filter the posted artifacts. \n" +
+                          "If empty, every deployment of every file is posted.\n" +
+                          "You don't need to escape regex chars twice. A single escape \"\\\" is enough." +
+                          "(e.g. this one filters all files ending with the version-number and \".jar\": \".*([0-9]\\.jar$)\")")
+    public String getArtifactFilter() {
+        return artifactFilter;
     }
 }
