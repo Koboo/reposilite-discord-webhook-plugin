@@ -10,8 +10,6 @@ import eu.koboo.reposilite.discord.webhook.DiscordWebhookPlugin;
 import eu.koboo.reposilite.discord.webhook.settings.RepositoryWebHookSettings;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.regex.Pattern;
-
 public class DeployEventListener implements EventListener<DeployEvent> {
 
     private final DiscordWebhookPlugin plugin;
@@ -27,13 +25,13 @@ public class DeployEventListener implements EventListener<DeployEvent> {
         String repositoryName = deployEvent.getRepository().getName();
 
         RepositoryWebHookSettings settings = plugin.getSettings().getRepository(repositoryName);
-        if(settings == null) {
+        if (settings == null) {
             plugin.getLogger().debug("Couldn't find RepositoryWebHookSettings for repository " + repositoryName + "!");
             return;
         }
 
         WebhookClient webhookClient = plugin.getWebHookClient(repositoryName);
-        if(webhookClient == null || webhookClient.isShutdown()) {
+        if (webhookClient == null || webhookClient.isShutdown()) {
             plugin.getLogger().debug("Couldn't find WebHookClient for repository " + repositoryName + "!");
             return;
         }
@@ -41,8 +39,8 @@ public class DeployEventListener implements EventListener<DeployEvent> {
 
         String artifactFilterRegex = settings.getArtifactFilter();
         String simpleName = deployEvent.getGav().getSimpleName();
-        if(artifactFilterRegex != null) {
-            if(!simpleName.matches(artifactFilterRegex)) {
+        if (artifactFilterRegex != null) {
+            if (!simpleName.matches(artifactFilterRegex)) {
                 plugin.getLogger().debug("Regex isn't matching to artifact " + simpleName + "!");
                 return;
             }

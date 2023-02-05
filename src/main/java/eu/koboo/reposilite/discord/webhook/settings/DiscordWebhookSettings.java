@@ -52,7 +52,7 @@ public class DiscordWebhookSettings implements SharedSettings {
 
     public RepositoryWebHookSettings getRepository(String repositoryName) {
         for (RepositoryWebHookSettings repositoryWebHookSettings : announcedRepositoriesList) {
-            if(repositoryName.equalsIgnoreCase(repositoryWebHookSettings.getReference())) {
+            if (repositoryName.equalsIgnoreCase(repositoryWebHookSettings.getReference())) {
                 continue;
             }
             return repositoryWebHookSettings;

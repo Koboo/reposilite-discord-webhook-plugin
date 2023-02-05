@@ -57,13 +57,13 @@ public class DiscordWebhookPlugin extends ReposilitePlugin {
         try {
             rootWebHookClient = createWebhookClient("Root", rootSettings.getRootWebHookUrl());
             List<RepositoryWebHookSettings> repositoriesList = rootSettings.getAnnouncedRepositoriesList();
-            if(repositoriesList != null && !repositoriesList.isEmpty()) {
+            if (repositoriesList != null && !repositoriesList.isEmpty()) {
                 for (RepositoryWebHookSettings settings : repositoriesList) {
-                    if(settings.getReference() == null || settings.getReference().trim().equalsIgnoreCase("")) {
+                    if (settings.getReference() == null || settings.getReference().trim().equalsIgnoreCase("")) {
                         getLogger().info("Couldn't create a new WebHookClient for a repository, because the repository name is empty. Please check the configuration of the Discord WebHook.");
                         continue;
                     }
-                    if(settings.getWebHookUrl() == null) {
+                    if (settings.getWebHookUrl() == null) {
                         continue;
                     }
                     WebhookClient repoWebHookClient = createWebhookClient(settings.getReference(), settings.getWebHookUrl());
@@ -91,12 +91,12 @@ public class DiscordWebhookPlugin extends ReposilitePlugin {
     public void closePreviousWebHooksClients() {
         for (String repositoryName : webhookClientMap.keySet()) {
             WebhookClient webhookClient = webhookClientMap.remove(repositoryName);
-            if(webhookClient != null) {
+            if (webhookClient != null) {
                 webhookClient.close();
             }
         }
         webhookClientMap.clear();
-        if(rootWebHookClient != null) {
+        if (rootWebHookClient != null) {
             rootWebHookClient.close();
             rootWebHookClient = null;
         }
@@ -104,7 +104,7 @@ public class DiscordWebhookPlugin extends ReposilitePlugin {
 
     public WebhookClient getWebHookClient(String repositoryName) {
         WebhookClient retClient = webhookClientMap.get(repositoryName);
-        if(retClient == null) {
+        if (retClient == null) {
             retClient = rootWebHookClient;
         }
         return retClient;
