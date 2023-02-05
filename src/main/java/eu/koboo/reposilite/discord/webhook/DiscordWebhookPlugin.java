@@ -24,10 +24,6 @@ import java.util.Map;
 @Plugin(name = "discord-webhook-plugin", dependencies = {"configuration", "local-configuration", "shared-configuration"}, settings = DiscordWebhookSettings.class)
 public class DiscordWebhookPlugin extends ReposilitePlugin {
 
-    private static final String WEBHOOK = "https://discord.com/api/webhooks/1070301314963230730/wWeNkBNc-0Jv9QfbMkUZzPJPN7dwbueY8da5iO50oPbH_hXmDL-F57rPEkwAZBm7Nnjk";
-    private static final String REPOSILITE_ICON = "https://reposilite.com/images/favicon.png";
-    private static final String REPOSITORY_URL = "https://reposilite.koboo.eu";
-
     MutableReference<DiscordWebhookSettings> settingsRef;
 
     WebhookClient rootWebHookClient;
