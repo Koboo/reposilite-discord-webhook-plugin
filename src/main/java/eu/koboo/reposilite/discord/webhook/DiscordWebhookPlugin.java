@@ -60,7 +60,7 @@ public class DiscordWebhookPlugin extends ReposilitePlugin {
             if(repositoriesList != null && !repositoriesList.isEmpty()) {
                 for (RepositoryWebHookSettings settings : repositoriesList) {
                     if(settings.getReference() == null || settings.getReference().trim().equalsIgnoreCase("")) {
-                        getLogger().info("Couldn't create a new WebHookClient for a repository, because the repository-name was empty. Please check the configuration of the Discord WebHook.");
+                        getLogger().info("Couldn't create a new WebHookClient for a repository, because the repository name is empty. Please check the configuration of the Discord WebHook.");
                         continue;
                     }
                     if(settings.getWebHookUrl() == null) {

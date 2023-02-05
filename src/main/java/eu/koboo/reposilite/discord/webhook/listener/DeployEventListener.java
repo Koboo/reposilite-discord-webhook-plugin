@@ -28,13 +28,13 @@ public class DeployEventListener implements EventListener<DeployEvent> {
 
         RepositoryWebHookSettings settings = plugin.getSettings().getRepository(repositoryName);
         if(settings == null) {
-            plugin.getLogger().info("Couldn't find RepositoryWebHookSettings for repository " + repositoryName + "!");
+            plugin.getLogger().debug("Couldn't find RepositoryWebHookSettings for repository " + repositoryName + "!");
             return;
         }
 
         WebhookClient webhookClient = plugin.getWebHookClient(repositoryName);
         if(webhookClient == null || webhookClient.isShutdown()) {
-            plugin.getLogger().info("Couldn't find WebHookClient for repository " + repositoryName + "!");
+            plugin.getLogger().debug("Couldn't find WebHookClient for repository " + repositoryName + "!");
             return;
         }
 
@@ -43,7 +43,7 @@ public class DeployEventListener implements EventListener<DeployEvent> {
         String simpleName = deployEvent.getGav().getSimpleName();
         if(artifactFilterRegex != null) {
             if(!simpleName.matches(artifactFilterRegex)) {
-                plugin.getLogger().info("Regex isn't matching to artifact " + simpleName + "!");
+                plugin.getLogger().debug("Regex isn't matching to artifact " + simpleName + "!");
                 return;
             }
         }
