@@ -35,4 +35,4 @@ This plugin allows posting of artifact deployments on Reposilite via Discord web
 
 #### Discord Post
 
-![Discord](https://i.imgur.com/pETPrdU.png)
+![Discord](https://i.imgur.com/qNlOv6c.png)
