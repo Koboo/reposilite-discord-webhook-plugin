@@ -24,7 +24,7 @@ public class DeployEventListener implements EventListener<DeployEvent> {
         String username = deployEvent.getBy().split("@")[0];
         String repositoryName = deployEvent.getRepository().getName();
 
-        RepositoryWebHookSettings settings = plugin.getSettings().getRepository(repositoryName);
+        RepositoryWebHookSettings settings = plugin.getRepositorySettings(repositoryName);
         if (settings == null) {
             plugin.getLogger().debug("Couldn't find RepositoryWebHookSettings for repository " + repositoryName + "!");
             return;
@@ -36,14 +36,11 @@ public class DeployEventListener implements EventListener<DeployEvent> {
             return;
         }
 
-
         String artifactFilterRegex = settings.getArtifactFilter();
         String simpleName = deployEvent.getGav().getSimpleName();
-        if (artifactFilterRegex != null) {
-            if (!simpleName.matches(artifactFilterRegex)) {
-                plugin.getLogger().debug("Regex isn't matching to artifact " + simpleName + "!");
-                return;
-            }
+        if (artifactFilterRegex != null && !simpleName.matches(artifactFilterRegex)) {
+            plugin.getLogger().debug("Regex isn't matching to artifact " + simpleName + "!");
+            return;
         }
 
         Location parentGov = deployEvent.getGav().getParent();
@@ -51,7 +48,7 @@ public class DeployEventListener implements EventListener<DeployEvent> {
 
         // Building the full url to redirect to the repository
         String repositoryDomain = plugin.getSettings().getRepositoryDomain();
-        if(!repositoryDomain.endsWith("/")) {
+        if (!repositoryDomain.endsWith("/")) {
             repositoryDomain = repositoryDomain + "/";
         }
         String artifactUrl = repositoryDomain + "#/" + repositoryName + "/" + parentString;
@@ -66,8 +63,13 @@ public class DeployEventListener implements EventListener<DeployEvent> {
                 .substring(0, replacedParent.length() - 2)
                 .replace("/", ".");
 
+        String botIconUrl = plugin.getSettings().getRootBotIconUrl();
+        if(settings.getBotIconUrl() != null && !settings.getBotIconUrl().trim().isEmpty()) {
+            botIconUrl = settings.getBotIconUrl();
+        }
+
         WebhookEmbedBuilder embedBuilder = new WebhookEmbedBuilder();
-        embedBuilder.setAuthor(new WebhookEmbed.EmbedAuthor(username, plugin.getSettings().getRootBotIconUrl(), artifactUrl));
+        embedBuilder.setAuthor(new WebhookEmbed.EmbedAuthor(username, botIconUrl, artifactUrl));
         embedBuilder.setTitle(new WebhookEmbed.EmbedTitle("[" + simpleName + "] new deployment", artifactUrl));
         embedBuilder.setDescription("A new artifact was deployed!");
 
