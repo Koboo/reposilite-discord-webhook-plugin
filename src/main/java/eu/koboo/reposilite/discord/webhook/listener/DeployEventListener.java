@@ -50,7 +50,7 @@ public class DeployEventListener implements EventListener<DeployEvent> {
         String parentString = parentGov.toString();
 
         // Building the full url to redirect to the repository
-        String artifactUrl = plugin.getSettings().getRepositoryDomain() + "/#/" + repositoryName + "/" + parentString;
+        String artifactUrl = plugin.getSettings().getRepositoryDomain() + "#/" + repositoryName + "/" + parentString;
 
         String[] split = parentString.split("\\/");
         String version = split[split.length - 1];
