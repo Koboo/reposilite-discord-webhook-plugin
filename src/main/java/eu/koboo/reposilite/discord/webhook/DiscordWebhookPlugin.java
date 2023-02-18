@@ -47,20 +47,26 @@ public class DiscordWebhookPlugin extends ReposilitePlugin {
     }
 
     private void handleConfigurationUpdate(DiscordWebhookSettings rootSettings) {
+        getLogger().debug("Recreating WebHookClients from configuration..");
         closePreviousWebHooksClients();
 
         if (rootSettings.getRootWebHookUrl().equalsIgnoreCase(DiscordWebhookSettings.DEFAULT_WEBHOOK)) {
-            getLogger().info("You need to configure the settings discord-webhook-plugin in the frontend!");
+            getLogger().info("You need to configure the settings of the " +
+                             "Discord WebHook Plugin in the frontend!");
             return;
         }
 
         try {
             rootWebHookClient = createWebhookClient("Root", rootSettings.getRootWebHookUrl());
+            getLogger().debug("Created root WebHookClient!");
             List<RepositoryWebHookSettings> repositoriesList = rootSettings.getAnnouncedRepositoriesList();
             if (repositoriesList != null && !repositoriesList.isEmpty()) {
                 for (RepositoryWebHookSettings settings : repositoriesList) {
-                    if (settings.getReference() == null || settings.getReference().trim().equalsIgnoreCase("")) {
-                        getLogger().info("Couldn't create a new WebHookClient for a repository, because the repository name is empty. Please check the configuration of the Discord WebHook.");
+                    if (settings.getReference() == null
+                        || settings.getReference().trim().equalsIgnoreCase("")) {
+                        getLogger().info("Couldn't create a new WebHookClient for a repository, " +
+                                         "because the repository name is empty. " +
+                                         "Please check the configuration of the Discord WebHook Plugin.");
                         continue;
                     }
                     if (settings.getWebHookUrl() == null) {
@@ -68,10 +74,13 @@ public class DiscordWebhookPlugin extends ReposilitePlugin {
                     }
                     WebhookClient repoWebHookClient = createWebhookClient(settings.getReference(), settings.getWebHookUrl());
                     webhookClientMap.put(settings.getReference(), repoWebHookClient);
+                    getLogger().debug("Created WebHookClient for repository \""  +
+                                      settings.getReference() + "\"!");
                 }
             }
         } catch (Exception e) {
-            getLogger().info("Couldn't create WebHookClients. Please check the configuration of the Discord WebHook.");
+            getLogger().info("Couldn't create WebHookClients. " +
+                             "Please check the configuration of the Discord WebHook Plugin.");
             getLogger().exception(e);
         }
     }
@@ -91,9 +100,10 @@ public class DiscordWebhookPlugin extends ReposilitePlugin {
     public void closePreviousWebHooksClients() {
         for (String repositoryName : webhookClientMap.keySet()) {
             WebhookClient webhookClient = webhookClientMap.remove(repositoryName);
-            if (webhookClient != null) {
-                webhookClient.close();
+            if (webhookClient == null) {
+                continue;
             }
+            webhookClient.close();
         }
         webhookClientMap.clear();
         if (rootWebHookClient != null) {
@@ -116,5 +126,21 @@ public class DiscordWebhookPlugin extends ReposilitePlugin {
 
     public DiscordWebhookSettings getSettings() {
         return settingsRef.get();
+    }
+
+    public RepositoryWebHookSettings getRepositorySettings(String repositoryName) {
+        if(repositoryName == null) {
+            return null;
+        }
+        for (RepositoryWebHookSettings repositoryWebHookSettings : settingsRef.get().getAnnouncedRepositoriesList()) {
+            if(repositoryWebHookSettings.getReference() == null) {
+                continue;
+            }
+            if (!repositoryName.equalsIgnoreCase(repositoryWebHookSettings.getReference())) {
+                continue;
+            }
+            return repositoryWebHookSettings;
+        }
+        return null;
     }
 }
