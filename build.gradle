@@ -33,10 +33,6 @@ dependencies {
     compileOnly("com.reposilite:reposilite:$reposiliteVersion")
 }
 
-shadowJar {
-    archiveBaseName.set("discord-webhook-plugin")
-}
-
 task sourcesJar(type: Jar) {
     from sourceSets.main.allJava
     archiveClassifier.set('sources')
