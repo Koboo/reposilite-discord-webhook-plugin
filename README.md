@@ -2,6 +2,12 @@
 
 This plugin allows posting of artifact deployments on Reposilite via Discord webhooks.
 
+## Screenshots
+
+- [Root Settings](#root-settings)
+- [Repository Settings](#repository-settings)
+- [Discord Post](#discord-post)
+
 ## RegEx Templates
 
 - Post every file which ends with ``.jar``
