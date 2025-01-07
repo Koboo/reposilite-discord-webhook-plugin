@@ -2,7 +2,7 @@ plugins {
     id('java')
     id('application')
     id('maven-publish')
-    id('com.github.johnrengelman.shadow') version('7.1.2')
+    id('com.gradleup.shadow') version('8.3.5')
 }
 
 group 'eu.koboo'
@@ -33,11 +33,11 @@ dependencies {
     compileOnly("com.reposilite:reposilite:$reposiliteVersion")
 }
 
-task sourcesJar(type: Jar) {
+tasks.register('sourcesJar', Jar) {
     from sourceSets.main.allJava
     archiveClassifier.set('sources')
 }
-task javadocJar(type: Jar) {
+tasks.register('javadocJar', Jar) {
     from javadoc
     archiveClassifier.set('javadoc')
 }
