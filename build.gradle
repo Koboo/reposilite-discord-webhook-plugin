@@ -45,14 +45,6 @@ task javadocJar(type: Jar) {
 publishing {
     repositories {
         maven {
-            name('koboo-releases')
-            url('https://reposilite.koboo.eu/releases')
-            credentials {
-                username(System.getenv('REPO_USER'))
-                password(System.getenv('REPO_TOKEN'))
-            }
-        }
-        maven {
             name('reposilite-release')
             url('https://maven.reposilite.com/releases')
             credentials {
