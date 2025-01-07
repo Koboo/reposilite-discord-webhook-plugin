@@ -7,6 +7,7 @@ import com.reposilite.maven.api.DeployEvent;
 import com.reposilite.plugin.api.EventListener;
 import com.reposilite.storage.api.Location;
 import eu.koboo.reposilite.discord.webhook.DiscordWebhookPlugin;
+import eu.koboo.reposilite.discord.webhook.settings.DiscordWebhookSettings;
 import eu.koboo.reposilite.discord.webhook.settings.RepositoryWebHookSettings;
 import org.jetbrains.annotations.NotNull;
 
@@ -48,10 +49,18 @@ public class DeployEventListener implements EventListener<DeployEvent> {
 
         // Building the full url to redirect to the repository
         String repositoryDomain = plugin.getSettings().getRepositoryDomain();
+        if (repositoryDomain == null) {
+            repositoryDomain = "";
+        }
+
         if (!repositoryDomain.endsWith("/")) {
             repositoryDomain = repositoryDomain + "/";
         }
         String artifactUrl = repositoryDomain + "#/" + repositoryName + "/" + parentString;
+
+        if (repositoryDomain.trim().isEmpty() || repositoryDomain.equals(DiscordWebhookSettings.DEFAULT_DOMAIN)) {
+            artifactUrl = null;
+        }
 
         String[] split = parentString.split("\\/");
         String version = split[split.length - 1];
@@ -64,7 +73,7 @@ public class DeployEventListener implements EventListener<DeployEvent> {
                 .replace("/", ".");
 
         String botIconUrl = plugin.getSettings().getRootBotIconUrl();
-        if(settings.getBotIconUrl() != null && !settings.getBotIconUrl().trim().isEmpty()) {
+        if (settings.getBotIconUrl() != null && !settings.getBotIconUrl().trim().isEmpty()) {
             botIconUrl = settings.getBotIconUrl();
         }
 
