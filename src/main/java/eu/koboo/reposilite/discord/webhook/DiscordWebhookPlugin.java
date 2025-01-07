@@ -20,9 +20,12 @@ import panda.std.reactive.MutableReference;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 @Plugin(name = "discord-webhook-plugin", dependencies = {"configuration", "local-configuration", "shared-configuration"}, settings = DiscordWebhookSettings.class)
 public class DiscordWebhookPlugin extends ReposilitePlugin {
+
+    private static final Pattern WEB_SCHEME_PATTERN = Pattern.compile("^(https|http)(://)(.+)$");
 
     MutableReference<DiscordWebhookSettings> settingsRef;
 
@@ -50,14 +53,31 @@ public class DiscordWebhookPlugin extends ReposilitePlugin {
         getLogger().debug("Recreating WebHookClients from configuration..");
         closePreviousWebHooksClients();
 
-        if (rootSettings.getRootWebHookUrl().equalsIgnoreCase(DiscordWebhookSettings.DEFAULT_WEBHOOK)) {
+        String rootWebHookUrl = rootSettings.getRootWebHookUrl();
+        if (rootWebHookUrl.equalsIgnoreCase(DiscordWebhookSettings.DEFAULT_WEBHOOK)) {
             getLogger().info("You need to configure the settings of the " +
                              "Discord WebHook Plugin in the frontend!");
             return;
         }
+        if(!WEB_SCHEME_PATTERN.matcher(rootWebHookUrl).matches()) {
+            getLogger().info(createInvalidURLMessage("root webhook", null));
+            return;
+        }
+
+        String rootBotIconUrl = rootSettings.getRootBotIconUrl();
+        if(rootBotIconUrl != null && !WEB_SCHEME_PATTERN.matcher(rootBotIconUrl).matches()) {
+            getLogger().info(createInvalidURLMessage("root boticon", null));
+            return;
+        }
+
+        String repositoryDomain = rootSettings.getRepositoryDomain();
+        if(repositoryDomain != null && !WEB_SCHEME_PATTERN.matcher(repositoryDomain).matches()) {
+            getLogger().info(createInvalidURLMessage("root repository domain", null));
+            return;
+        }
 
         try {
-            rootWebHookClient = createWebhookClient("Root", rootSettings.getRootWebHookUrl());
+            rootWebHookClient = createWebhookClient("Root", rootWebHookUrl);
             getLogger().debug("Created root WebHookClient!");
             List<RepositoryWebHookSettings> repositoriesList = rootSettings.getAnnouncedRepositoriesList();
             if (repositoriesList != null && !repositoriesList.isEmpty()) {
@@ -69,10 +89,20 @@ public class DiscordWebhookPlugin extends ReposilitePlugin {
                                          "Please check the configuration of the Discord WebHook Plugin.");
                         continue;
                     }
-                    if (settings.getWebHookUrl() == null) {
+                    String webHookUrl = settings.getWebHookUrl();
+                    if (webHookUrl == null) {
                         continue;
                     }
-                    WebhookClient repoWebHookClient = createWebhookClient(settings.getReference(), settings.getWebHookUrl());
+                    if(!WEB_SCHEME_PATTERN.matcher(rootWebHookUrl).matches()) {
+                        getLogger().info(createInvalidURLMessage("webhook", settings.getReference()));
+                        continue;
+                    }
+                    String botIconUrl = settings.getBotIconUrl();
+                    if(botIconUrl != null && !WEB_SCHEME_PATTERN.matcher(botIconUrl).matches()) {
+                        getLogger().info(createInvalidURLMessage("boticon", settings.getReference()));
+                        continue;
+                    }
+                    WebhookClient repoWebHookClient = createWebhookClient(settings.getReference(), webHookUrl);
                     webhookClientMap.put(settings.getReference(), repoWebHookClient);
                     getLogger().debug("Created WebHookClient for repository \""  +
                                       settings.getReference() + "\"!");
@@ -83,6 +113,16 @@ public class DiscordWebhookPlugin extends ReposilitePlugin {
                              "Please check the configuration of the Discord WebHook Plugin.");
             getLogger().exception(e);
         }
+    }
+
+    private String createInvalidURLMessage(String type, String repository) {
+        String repositoryPart = "";
+        if(repository != null && !repository.trim().isEmpty()) {
+            repositoryPart = " of the repository \"" + repository + "\"";
+        }
+        return "The " + type + " url" + repositoryPart + " is incorrect! " +
+                "You need to provide a url, which starts with \"https://\" or \"http://\"! " +
+                "Please check the configuration of the Discord WebHook Plugin.";
     }
 
     private WebhookClient createWebhookClient(String prefix, String webHookUrl) {
