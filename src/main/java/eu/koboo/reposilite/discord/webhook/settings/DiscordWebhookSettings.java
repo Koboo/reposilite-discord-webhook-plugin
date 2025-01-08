@@ -12,11 +12,10 @@ import java.util.List;
 public class DiscordWebhookSettings implements SharedSettings {
 
     public static final String DEFAULT_WEBHOOK = "PLACE_YOUR_WEBHOOK_HERE";
-    public static final String DEFAULT_DOMAIN = "YOUR_REPOSITORY_DOMAIN_HERE";
 
     private String rootWebHookUrl = DEFAULT_WEBHOOK;
     private String rootBotIconUrl = "https://reposilite.com/images/favicon.png";
-    private String repositoryDomain = DEFAULT_DOMAIN;
+    private String repositoryDomain = "";
     private List<RepositoryWebHookSettings> announcedRepositoriesList = Collections.emptyList();
 
     @Doc(title = "Root WebHook URL",
@@ -36,8 +35,9 @@ public class DiscordWebhookSettings implements SharedSettings {
     }
 
     @Doc(title = "Repository-Domain",
-            description = "This is the domain, which is used to access your reposilite instance. \n" +
-                          "It's used to link to the deployed artifacts. \n")
+            description = "This is the domain, which is used to create a link for the posted artifacts " +
+                    "on your reposilite instance. This has to be a domain and not the full repository." +
+                    "(Example: https://repo.panda-lang.org/)")
     public String getRepositoryDomain() {
         return repositoryDomain;
     }

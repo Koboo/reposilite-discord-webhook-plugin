@@ -58,11 +58,11 @@ public class DeployEventListener implements EventListener<DeployEvent> {
         }
         String artifactUrl = repositoryDomain + "#/" + repositoryName + "/" + parentString;
 
-        if (repositoryDomain.trim().isEmpty() || repositoryDomain.equals(DiscordWebhookSettings.DEFAULT_DOMAIN)) {
+        if (repositoryDomain.trim().isEmpty()) {
             artifactUrl = null;
         }
 
-        String[] split = parentString.split("\\/");
+        String[] split = parentString.split("/");
         String version = split[split.length - 1];
         String artifactId = split[split.length - 2];
         String replacedParent = parentString
