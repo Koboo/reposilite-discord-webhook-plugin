@@ -5,6 +5,8 @@ plugins {
     id('com.gradleup.shadow') version('8.3.5')
 }
 
+def reposiliteVersion = "3.5.20"
+
 group 'eu.koboo'
 version "$reposiliteVersion"
 
@@ -29,14 +31,13 @@ repositories {
 }
 
 dependencies {
-    implementation("club.minnced:discord-webhooks:0.8.2")
+    implementation("club.minnced:discord-webhooks:0.8.4")
     compileOnly("com.reposilite:reposilite:$reposiliteVersion")
 }
 
 java {
     sourceCompatibility = JavaVersion.VERSION_11
     targetCompatibility = JavaVersion.VERSION_11
-    toolchain.languageVersion.set(JavaLanguageVersion.of(11))
 }
 
 tasks.register('sourcesJar', Jar) {
