@@ -2,10 +2,10 @@ plugins {
     id('java')
     id('application')
     id('maven-publish')
-    id('com.gradleup.shadow') version('8.3.5')
+    id('com.gradleup.shadow') version('9.3.1')
 }
 
-def reposiliteVersion = "3.5.20"
+def reposiliteVersion = "3.5.26"
 
 group 'eu.koboo'
 version "$reposiliteVersion"
@@ -23,10 +23,6 @@ repositories {
     maven {
         name('reposilite-snapshots')
         url('https://maven.reposilite.com/snapshots/')
-    }
-    maven {
-        name('koboo-repo')
-        url('https://reposilite.koboo.eu/releases')
     }
 }
 
