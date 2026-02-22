@@ -84,6 +84,13 @@ public class DeployEventListener implements EventListener<DeployEvent> {
 
         embedBuilder.addField(new WebhookEmbed.EmbedField(
                 true,
+                "**Gradle (Kotlin)**",
+                replace("```kt\n" +
+                        "implementation(\"$groupId:$artifactId:$version\")\n" +
+                        "```\n", groupId, artifactId, version)
+        ));
+        embedBuilder.addField(new WebhookEmbed.EmbedField(
+                true,
                 "**Gradle (Groovy)**",
                 replace("```groovy\n" +
                         "implementation \"$groupId:$artifactId:$version\"\n" +
